@@ -198,7 +198,7 @@ void *send_heartbeat(void * thread_id) {
     {
         int n;
         n = sendto(sock, msg.c_str(), msg.length()+1, 0, (struct sockaddr *)&addr, sizeof(addr));
-        //printf("SEND: %s\n",msg.c_str());
+        printf("SEND: %s\n",msg.c_str());
         if (n < 0)
         {
             perror("sendto");
@@ -270,7 +270,7 @@ int main(int argc, const char * argv[]) {
             pthread_cancel(send_message_broadcast_thread);
             break;
         } else if (command[0]!='/') {
-            std::string message = command.substr(1);
+            std::string message = command;
             on_broadcast(message);
         }
     }

@@ -19,16 +19,17 @@
 #include <map>
 #include <string>
 #include <queue>
+
 #include "json.h"
+#include "state.h"
+#include "tcp.h"
+#include "ultility.h"
 
 #define HEARTBEAT_PORT 8000
 #define MESSAGE_PORT 8001
 #define BROADCAST_ADDR "255.255.255.255"
 
 using namespace nlohmann;
-
-std::map<std::string,std::string> live_user_list;
-static std::string username;
 
 void *recv_heartbeat(void* thread_id) {
     struct sockaddr_in addr;
@@ -58,7 +59,7 @@ void *recv_heartbeat(void* thread_id) {
         {
             buff[n] = 0;
             char ip_port[512];
-            sprintf(ip_port, "%s:%u", inet_ntoa(clientAddr.sin_addr),ntohs(clientAddr.sin_port));
+            sprintf(ip_port, "%s", inet_ntoa(clientAddr.sin_addr));
             //printf("RECV: %s %s\n", ip_port, buff);
             json jon = json::parse(buff);
             live_user_list[jon["name"]]=ip_port;
@@ -160,7 +161,7 @@ void *recv_message_broadcast(void* thread_id) {
             if(type=="broadcast"){
                 std::string name = j["name"];
                 std::string data = j["data"];
-                printf("%s [%s]: %s\n",name.c_str(),time_buff,data.c_str());
+                printf("[B][%s][%s]: %s\n",time_buff,name.c_str(),data.c_str());
             }
         }
         else
@@ -198,7 +199,7 @@ void *send_heartbeat(void * thread_id) {
     {
         int n;
         n = sendto(sock, msg.c_str(), msg.length()+1, 0, (struct sockaddr *)&addr, sizeof(addr));
-        printf("SEND: %s\n",msg.c_str());
+        //printf("SEND: %s\n",msg.c_str());
         if (n < 0)
         {
             perror("sendto");
@@ -245,6 +246,7 @@ int main(int argc, const char * argv[]) {
     std::cout << "Hello, World!\n";
     pthread_t send_heartbeat_thread, recv_heartbeat_thread;
     pthread_t send_message_broadcast_thread, recv_message_broadcast_thread;
+    init_tcp_server();
     pthread_create(&recv_heartbeat_thread, NULL, recv_heartbeat,NULL);
     pthread_create(&send_message_broadcast_thread, NULL, send_message_broadcast,NULL);
     pthread_create(&recv_message_broadcast_thread, NULL, recv_message_broadcast,NULL);
@@ -268,10 +270,16 @@ int main(int argc, const char * argv[]) {
             pthread_cancel(recv_heartbeat_thread);
             pthread_cancel(recv_message_broadcast_thread);
             pthread_cancel(send_message_broadcast_thread);
+            destroy_tcp_server();
             break;
         } else if (command[0]!='/') {
             std::string message = command;
             on_broadcast(message);
+        } else if(command.substr(0,2)=="/s") {
+            std::string name_msg = command.substr(2);
+            
+        } else if (command.substr(0,2)=="/t"){
+            on_secret_message("zly111", "hello");
         }
     }
     //pthread_exit(NULL);

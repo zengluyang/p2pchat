@@ -277,7 +277,7 @@ int main(int argc, const char * argv[]) {
         char buff[4096];
         std::string command;
         if(app_state==input_state::WAIT_BRAODCAST_INPUT) {
-                printf("get stdin!\n");
+                //printf("get stdin!\n");
                 //switch (app_state) {
                 //    case input_state::WAIT_BRAODCAST_INPUT:
                 std::cin.getline(buff,sizeof(buff));

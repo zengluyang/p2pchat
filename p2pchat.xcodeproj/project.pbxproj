@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		1839F93E1A67855B0047DCA7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1839F93D1A67855B0047DCA7 /* main.cpp */; };
+		1839F9471A74E1090047DCA7 /* json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1839F9461A74E1090047DCA7 /* json.cpp */; };
+		1839F94A1A760D4F0047DCA7 /* tcp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1839F9481A760D4F0047DCA7 /* tcp.cpp */; };
+		1839F94E1A7627240047DCA7 /* ultility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1839F94D1A7627240047DCA7 /* ultility.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +28,14 @@
 /* Begin PBXFileReference section */
 		1839F93A1A67855B0047DCA7 /* p2pchat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = p2pchat; sourceTree = BUILT_PRODUCTS_DIR; };
 		1839F93D1A67855B0047DCA7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		1839F9441A67CAB40047DCA7 /* Timestamp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Timestamp.h; sourceTree = "<group>"; };
+		1839F9451A74E0D00047DCA7 /* json.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = json.h; sourceTree = "<group>"; };
+		1839F9461A74E1090047DCA7 /* json.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json.cpp; sourceTree = "<group>"; };
+		1839F9481A760D4F0047DCA7 /* tcp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tcp.cpp; sourceTree = "<group>"; };
+		1839F9491A760D4F0047DCA7 /* tcp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tcp.h; sourceTree = "<group>"; };
+		1839F94B1A760ED60047DCA7 /* state.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = state.h; sourceTree = "<group>"; };
+		1839F94C1A7626890047DCA7 /* ultility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ultility.h; sourceTree = "<group>"; };
+		1839F94D1A7627240047DCA7 /* ultility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ultility.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +69,14 @@
 			isa = PBXGroup;
 			children = (
 				1839F93D1A67855B0047DCA7 /* main.cpp */,
+				1839F94C1A7626890047DCA7 /* ultility.h */,
+				1839F94D1A7627240047DCA7 /* ultility.cpp */,
+				1839F9481A760D4F0047DCA7 /* tcp.cpp */,
+				1839F9491A760D4F0047DCA7 /* tcp.h */,
+				1839F94B1A760ED60047DCA7 /* state.h */,
+				1839F9451A74E0D00047DCA7 /* json.h */,
+				1839F9461A74E1090047DCA7 /* json.cpp */,
+				1839F9441A67CAB40047DCA7 /* Timestamp.h */,
 			);
 			path = p2pchat;
 			sourceTree = "<group>";
@@ -118,7 +137,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1839F94A1A760D4F0047DCA7 /* tcp.cpp in Sources */,
+				1839F94E1A7627240047DCA7 /* ultility.cpp in Sources */,
 				1839F93E1A67855B0047DCA7 /* main.cpp in Sources */,
+				1839F9471A74E1090047DCA7 /* json.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +254,7 @@
 				1839F9431A67855B0047DCA7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

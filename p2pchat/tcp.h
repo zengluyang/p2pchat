@@ -26,6 +26,7 @@ void* send_message_secret(void* thread_id);
 void init_tcp_server();
 void destroy_tcp_server();
 void on_secret_message(std::string name,std::string message);
+void on_secret_message_instant(std::string name, char c, bool end);
 void on_recv(std::string &packet);
 void push_to_queue_and_signal(SecretMessage &sm);
 void send_secret_request(std::string name);

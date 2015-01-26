@@ -79,7 +79,7 @@ void tcp_send(std::string ip,std::string message) {
         return ;
     }
     close(sockfd);
-    printf("TCP SEND: %s\n",message.c_str());
+    //printf("TCP SEND: %s\n",message.c_str());
 
 }
 
@@ -109,7 +109,7 @@ void* recv_message_secret(void* thread_id){
         char incoming_data_buffer[4096];
         bytes_recieved = recv(connfd, incoming_data_buffer,4095, 0);
         incoming_data_buffer[bytes_recieved] = '\0';
-        printf("TCP RECV: %s\n",incoming_data_buffer);
+        //printf("TCP RECV: %s\n",incoming_data_buffer);
         std::string packet(incoming_data_buffer);
         on_recv(packet);
         close(connfd);
@@ -132,7 +132,7 @@ void* send_message_secret(void* thread_id){
             std::string name = sm.name;
             std::string message = sm.message;
             pthread_mutex_unlock(&send_secret_message_queue_mutex);
-            printf("live_user_list[%s]:%s\n",name.c_str(),live_user_list[name].c_str());
+            //printf("live_user_list[%s]:%s\n",name.c_str(),live_user_list[name].c_str());
             tcp_send(live_user_list[name],message);
             
             //send to network
@@ -157,14 +157,26 @@ void on_secret_message(std::string name,std::string message){
     log["dstname"] = name;
     log["data"] = message;
     char time_buff[1024];
-    time_t now;
+    time_t now = time(NULL);
     strftime(time_buff, 1024, "%Y-%m-%d %H:%M:%S", localtime(&now));
     std::string time(time_buff);
     log["time"] = time;
     ofstream_secret<<log.dump()<<std::endl;
-
-    
 }
+
+void on_secret_message_instant(std::string name, char c, bool end) {
+    SecretMessage sm;
+    sm.name=name;
+    nlohmann::json j;
+    j["type"]="secret_instant";
+    j["name"]=username;
+    j["data"]=std::string({c});
+    j["end"]=end;
+    sm.message=j.dump();
+    push_to_queue_and_signal(sm);
+
+}
+
 
 void send_secret_request(std::string name){
     nlohmann::json j;
@@ -222,6 +234,7 @@ void on_recv(std::string &packet) {
     char time_buff[1024];
     time_t now = time(NULL);
     strftime(time_buff, 1024, "%H:%M:%S", localtime(&now));
+    static bool begin_instant=true;
     if(type=="secret") {
         std::string name = j["name"];
         std::string data = j["data"];
@@ -275,5 +288,22 @@ void on_recv(std::string &packet) {
     } else if (type=="decline_secret"){
         std::string srcname = j["srcname"];
         printf("[I][%s][%s] declines to chat with you\n",time_buff,srcname.c_str());
+    } else if (type=="secret_instant") {
+        if(begin_instant){
+            printf("in else if (type==sec)\n");
+            std::string name = j["name"];
+            std::string data = j["data"];
+            printf("[M][%s][%s] says to you: %s",time_buff,name.c_str(),data.c_str());
+            begin_instant=false;
+        } else {
+            std::string data = j["data"];
+            bool end = j["end"];
+            if(end) {
+                begin_instant = true;
+                printf("\n");
+            } else {
+                printf("%s",data.c_str());
+            }
+        }
     }
 }

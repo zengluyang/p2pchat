@@ -258,7 +258,7 @@ void on_online(std::string &name){
     
 }
 
-
+bool instant = false;
 int main(int argc, const char * argv[]) {
     char name[4066];
     std::cout<<"input username:";
@@ -301,14 +301,28 @@ int main(int argc, const char * argv[]) {
                     std::string name_msg = command.substr(3);
                     std::vector<std::string> vs = split(name_msg,' ');
                     std::string name=vs[0];
-                    std::cout<<name;
-                    std::string msg;
-                    for(int i=1;i<vs.size();i++) {
-                        msg+=vs[i];
+                    if(vs.size()==1) {
+                        char c;
+                        while (std::cin.get(c)) {
+                            if(c=='\n') {
+                                break;
+                            }
+                            else {
+                                //printf("%c \n",c);
+                                on_secret_message_instant(name,c,false);
+                            }
+                        }
+                        on_secret_message_instant(name,'\n',true);
+                    } else{
+                        std::string msg;
+                        for(int i=1;i<vs.size();i++) {
+                            msg+=vs[i];
+                        }
+                        on_secret_message(name, msg);
                     }
-                    on_secret_message(name, msg);
                 } else if (command.substr(0,2)=="/h"){
                     char buff[4096];
+                    
                     while(ifstream_broadcast.getline(buff, sizeof(buff)))
                     {
                         std::string log(buff);
@@ -337,7 +351,12 @@ int main(int argc, const char * argv[]) {
                     ifstream_secret.clear();
                     ifstream_secret.seekg(0,std::ios::beg);
 
-
+                } else if(command.substr(0,3)=="/i ") {
+                    if(command.substr(3,2)=="on") {
+                        instant = true;
+                    } else {
+                        instant = false;
+                    }
                 }
         } else {
             std::cin.getline(buff,sizeof(buff));

@@ -305,5 +305,6 @@ void on_recv(std::string &packet) {
                 printf("%s",data.c_str());
             }
         }
+        fflush(stdout);
     }
 }

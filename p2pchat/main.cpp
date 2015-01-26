@@ -21,6 +21,7 @@
 #include <queue>
 #include <vector>
 #include <sstream>
+#include <fstream>
 
 #include "json.h"
 #include "state.h"
@@ -32,6 +33,16 @@
 #define BROADCAST_ADDR "255.255.255.255"
 
 using namespace nlohmann;
+
+static std::fstream ofstream_broadcast;
+static std::fstream ifstream_broadcast;
+static std::fstream ifstream_secret;
+void init_db() {
+    ofstream_broadcast.open("broadcast.db", std::ios_base::app);
+    ifstream_broadcast.open("broadcast.db", std::ios_base::in);
+    ifstream_secret.open("secret.db", std::ios_base::in);
+}
+
 
 void *recv_heartbeat(void* thread_id) {
     struct sockaddr_in addr;
@@ -155,7 +166,7 @@ void *recv_message_broadcast(void* thread_id) {
         if (n>0)
         {
             buff[n] = 0;
-            char time_buff[20];
+            char time_buff[1024];
             time_t now = time(NULL);
             strftime(time_buff, 20, "%H:%M:%S", localtime(&now));
             json j = json::parse(buff);
@@ -164,6 +175,10 @@ void *recv_message_broadcast(void* thread_id) {
                 std::string name = j["name"];
                 std::string data = j["data"];
                 printf("[B][%s][%s]: %s\n",time_buff,name.c_str(),data.c_str());
+                strftime(time_buff, 1024, "%Y-%m-%d %H:%M:%S", localtime(&now));
+                j["time"] = std::string(time_buff);
+                std::string log(j.dump());
+                ofstream_broadcast<<log<<std::endl;
             }
         }
         else
@@ -249,7 +264,6 @@ int main(int argc, const char * argv[]) {
     std::cout<<"input username:";
     std::cin.getline(name,sizeof(name));
     std::string name_str(name);
-
     pthread_t send_heartbeat_thread, recv_heartbeat_thread;
     pthread_t send_message_broadcast_thread, recv_message_broadcast_thread;
     init_tcp_server();
@@ -258,7 +272,7 @@ int main(int argc, const char * argv[]) {
     pthread_create(&recv_message_broadcast_thread, NULL, recv_message_broadcast,NULL);
     on_online(name_str);
     pthread_create(&send_heartbeat_thread, NULL, send_heartbeat,NULL);
-    
+    init_db();
     while(1){
         char buff[4096];
         std::string command;
@@ -283,13 +297,47 @@ int main(int argc, const char * argv[]) {
                 } else if (command[0]!='/') {
                     std::string message = command;
                     on_broadcast(message);
-                } else if(command.substr(0,3)=="/s ") {
-                    std::string name = command.substr(3);
-                    send_secret_request(name);
-                    
-                } else if (command.substr(0,3)=="/t "){
-                    std::string name = command.substr(3);
-                    on_secret_message(name, "hello");
+                } else if (command.substr(0,3)=="/s "){
+                    std::string name_msg = command.substr(3);
+                    std::vector<std::string> vs = split(name_msg,' ');
+                    std::string name=vs[0];
+                    std::cout<<name;
+                    std::string msg;
+                    for(int i=1;i<vs.size();i++) {
+                        msg+=vs[i];
+                    }
+                    on_secret_message(name, msg);
+                } else if (command.substr(0,2)=="/h"){
+                    char buff[4096];
+                    while(ifstream_broadcast.getline(buff, sizeof(buff)))
+                    {
+                        std::string log(buff);
+                        json j = json::parse(buff);
+                        std::string time = j["time"];
+                        std::string name = j["name"];
+                        std::string data = j["data"];
+                        printf("[B][%s][%s]: %s\n",time.c_str(),name.c_str(),data.c_str());
+                    }
+                    ifstream_broadcast.clear();
+                    ifstream_broadcast.seekg(0,std::ios::beg);
+                } else if(command.substr(0,4)=="/sh "){
+                    std::string name = command.substr(4);
+                    char buff[4096];
+                    while(ifstream_secret.getline(buff, sizeof(buff)))
+                    {
+                        std::string log(buff);
+                        json j = json::parse(buff);
+                        std::string time = j["time"];
+                        std::string srcname = j["srcname"];
+                        std::string dstname = j["dstname"];
+                        std::string data = j["data"];
+                        if(srcname==name || dstname==name)
+                            printf("[M][%s][%s]: %s\n",time.c_str(),srcname.c_str(),data.c_str());
+                    }
+                    ifstream_secret.clear();
+                    ifstream_secret.seekg(0,std::ios::beg);
+
+
                 }
         } else {
             std::cin.getline(buff,sizeof(buff));

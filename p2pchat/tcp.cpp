@@ -17,6 +17,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <map>
+#include <fstream>
 
 #include "tcp.h"
 #include "json.h"
@@ -25,7 +26,16 @@ extern std::string username;
 static pthread_t recv_message_secret_thread;
 static pthread_t send_message_secret_thread;
 
+static std::fstream ofstream_secret;
+static std::fstream ifstream_secret;
+
+void init_tcp_db() {
+    ofstream_secret.open("secret.db", std::ios_base::app);
+    ifstream_secret.open("secret.db", std::ios_base::in);
+}
+
 void init_tcp_server(){
+    init_tcp_db();
     pthread_create(&recv_message_secret_thread, NULL, recv_message_secret,NULL);
     pthread_create(&send_message_secret_thread, NULL, send_message_secret,NULL);
 }
@@ -124,6 +134,7 @@ void* send_message_secret(void* thread_id){
             pthread_mutex_unlock(&send_secret_message_queue_mutex);
             printf("live_user_list[%s]:%s\n",name.c_str(),live_user_list[name].c_str());
             tcp_send(live_user_list[name],message);
+            
             //send to network
         }
     }
@@ -140,6 +151,19 @@ void on_secret_message(std::string name,std::string message){
     j["data"]=message;
     sm.message=j.dump();
     push_to_queue_and_signal(sm);
+    nlohmann::json log;
+    log["type"] = "secret";
+    log["srcname"] = username;
+    log["dstname"] = name;
+    log["data"] = message;
+    char time_buff[1024];
+    time_t now;
+    strftime(time_buff, 1024, "%Y-%m-%d %H:%M:%S", localtime(&now));
+    std::string time(time_buff);
+    log["time"] = time;
+    ofstream_secret<<log.dump()<<std::endl;
+
+    
 }
 
 void send_secret_request(std::string name){
@@ -195,13 +219,22 @@ void change_state(input_state state) {
 void on_recv(std::string &packet) {
     nlohmann::json j = nlohmann::json::parse(packet);
     std::string type=j["type"];
-    char time_buff[40];
+    char time_buff[1024];
     time_t now = time(NULL);
-    strftime(time_buff, 20, "%H:%M:%S", localtime(&now));
+    strftime(time_buff, 1024, "%H:%M:%S", localtime(&now));
     if(type=="secret") {
         std::string name = j["name"];
         std::string data = j["data"];
         printf("[M][%s][%s] says to you: %s\n",time_buff,name.c_str(),data.c_str());
+        nlohmann::json log;
+        log["type"] = type;
+        log["srcname"] = name;
+        log["dstname"] = username;
+        log["data"] = data;
+        strftime(time_buff, 1024, "%Y-%m-%d %H:%M:%S", localtime(&now));
+        std::string time(time_buff);
+        log["time"] = time;
+        ofstream_secret<<log.dump()<<std::endl;
     } else if(type=="request_secret" && j["dstname"]==username){
         char buff[4096];
         std::string name = j["srcname"];

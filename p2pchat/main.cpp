@@ -243,46 +243,63 @@ void on_online(std::string &name){
     
 }
 
+
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    char name[4066];
+    std::cout<<"input username:";
+    std::cin.getline(name,sizeof(name));
+    std::string name_str(name);
+
     pthread_t send_heartbeat_thread, recv_heartbeat_thread;
     pthread_t send_message_broadcast_thread, recv_message_broadcast_thread;
     init_tcp_server();
     pthread_create(&recv_heartbeat_thread, NULL, recv_heartbeat,NULL);
     pthread_create(&send_message_broadcast_thread, NULL, send_message_broadcast,NULL);
     pthread_create(&recv_message_broadcast_thread, NULL, recv_message_broadcast,NULL);
-    char name[4066];
-    std::cout<<"input username:";
-    std::cin.getline(name,sizeof(name));
-    std::string name_str(name);
     on_online(name_str);
     pthread_create(&send_heartbeat_thread, NULL, send_heartbeat,NULL);
+    
     while(1){
         char buff[4096];
-        std::cin.getline(buff,sizeof(buff));
-        std::string command(buff);
-        if (command.substr(0,2)=="/l"){
-            print_live_user_list();
-        } else if(command.substr(0,2)=="/b"){
-            std::string message = command.substr(2);
-            on_broadcast(message);
-        } else if (command.substr(0,2)=="/q") {
-            pthread_cancel(send_heartbeat_thread);
-            pthread_cancel(recv_heartbeat_thread);
-            pthread_cancel(recv_message_broadcast_thread);
-            pthread_cancel(send_message_broadcast_thread);
-            destroy_tcp_server();
-            break;
-        } else if (command[0]!='/') {
-            std::string message = command;
-            on_broadcast(message);
-        } else if(command.substr(0,3)=="/s ") {
-            std::string name = command.substr(3);
-            send_secret_request(name);
-
-        } else if (command.substr(0,2)=="/t"){
-            on_secret_message("zly111", "hello");
+        std::string command;
+        if(app_state==input_state::WAIT_BRAODCAST_INPUT) {
+                printf("get stdin!\n");
+                //switch (app_state) {
+                //    case input_state::WAIT_BRAODCAST_INPUT:
+                std::cin.getline(buff,sizeof(buff));
+                command = std::string(buff);
+                if (command.substr(0,2)=="/l"){
+                    print_live_user_list();
+                } else if(command.substr(0,2)=="/b"){
+                    std::string message = command.substr(2);
+                    on_broadcast(message);
+                } else if (command.substr(0,2)=="/q") {
+                    pthread_cancel(send_heartbeat_thread);
+                    pthread_cancel(recv_heartbeat_thread);
+                    pthread_cancel(recv_message_broadcast_thread);
+                    pthread_cancel(send_message_broadcast_thread);
+                    destroy_tcp_server();
+                    break;
+                } else if (command[0]!='/') {
+                    std::string message = command;
+                    on_broadcast(message);
+                } else if(command.substr(0,3)=="/s ") {
+                    std::string name = command.substr(3);
+                    send_secret_request(name);
+                    
+                } else if (command.substr(0,3)=="/t "){
+                    std::string name = command.substr(3);
+                    on_secret_message(name, "hello");
+                }
+        } else {
+            std::cin.getline(buff,sizeof(buff));
+            command = std::string(buff);
+            if(command=="y") {
+                pthread_mutex_lock(&yesno_mutex);
+                yesno = true;
+                pthread_cond_signal(&yesno_condvar);
+                pthread_mutex_unlock(&yesno_mutex);
+            }
         }
     }
     //pthread_exit(NULL);

@@ -13,8 +13,9 @@
 #include <queue>
 #include <utility>
 #include <string>
+#include <pthread.h>
+#include "state.h"
 #define TCP_LISTEN_PORT 8000
-
 class SecretMessage{
 public:
     std::string name;
@@ -28,4 +29,7 @@ void on_secret_message(std::string name,std::string message);
 void on_recv(std::string &packet);
 void push_to_queue_and_signal(SecretMessage &sm);
 void send_secret_request(std::string name);
+void send_secret_accept(std::string name);
+void change_state(input_state state);
+
 #endif /* defined(__p2pchat__tcp__) */

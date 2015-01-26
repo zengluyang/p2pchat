@@ -74,6 +74,7 @@ void tcp_send(std::string ip,std::string message) {
 }
 
 void* recv_message_secret(void* thread_id){
+
     struct sockaddr_in serv_addr;
     int listenfd = 0;
 
@@ -90,7 +91,7 @@ void* recv_message_secret(void* thread_id){
     bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
     
     listen(listenfd, 10);
-
+    
     while(1)
     {
         int connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
@@ -157,6 +158,11 @@ void send_secret_accept(std::string name) {
     j["type"]="accept_secret";
     j["dstname"]=name;
     j["srcname"]=username;
+    SecretMessage sm;
+    sm.name=name;
+    sm.message=j.dump();
+    push_to_queue_and_signal(sm);
+
 
 }
 
@@ -165,6 +171,10 @@ void send_secret_decline(std::string name) {
     j["type"]="decline_secret";
     j["dstname"]=name;
     j["srcname"]=username;
+    SecretMessage sm;
+    sm.name=name;
+    sm.message=j.dump();
+    push_to_queue_and_signal(sm);
     
 }
 
@@ -173,6 +183,13 @@ void push_to_queue_and_signal(SecretMessage &sm) {
     send_sercert_message_queue.push(sm);
     pthread_mutex_unlock(&send_secret_message_queue_mutex);
     pthread_cond_signal(&send_secret_message_condvar);
+}
+
+void change_state(input_state state) {
+    pthread_mutex_lock(&stdin_mutex);
+    app_state = state;
+    pthread_cond_signal(&stdin_condvar);
+    pthread_mutex_unlock(&stdin_mutex);
 }
 
 void on_recv(std::string &packet) {
@@ -188,11 +205,25 @@ void on_recv(std::string &packet) {
     } else if(type=="request_secret" && j["dstname"]==username){
         char buff[4096];
         std::string name = j["srcname"];
-        printf("[I][%s][%s] requests to chat with you, y/n:\n",time_buff,name.c_str());
-        std::cin.getline(buff,sizeof(buff));
-        std::string yesno(buff);
-        if(yesno=="y" || yesno=="yes") {
+        app_state = input_state::WAIT_SECRET_YES_NO;
+        printf("[I][%s][%s] requests to chat with you, y/n:",time_buff,name.c_str());
+        pthread_mutex_lock(&yesno_mutex);
+        pthread_cond_wait(&yesno_condvar,&yesno_mutex);
+        pthread_mutex_unlock(&yesno_mutex);
+        if(yesno==true){
             send_secret_accept(name);
+            std::cin.getline(buff,sizeof(buff));
+            std::string message(buff);
+            while(1) {
+                char buff[4096];
+                std::cin.getline(buff,sizeof(buff));
+                std::string message(buff);
+                if(message=="/e") {
+                    break;
+                } else {
+                    on_secret_message(j["srcname"],message);
+                }
+            }
         } else {
             send_secret_decline(name);
         }
@@ -204,9 +235,10 @@ void on_recv(std::string &packet) {
             if(message=="/e") {
                 break;
             } else {
-                on_secret_message(j["srcname"],j["data"]);
+                on_secret_message(j["srcname"],message);
             }
         }
+        
     } else if (type=="decline_secret"){
         std::string srcname = j["srcname"];
         printf("[I][%s][%s] declines to chat with you\n",time_buff,srcname.c_str());

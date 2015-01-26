@@ -27,4 +27,5 @@ void destroy_tcp_server();
 void on_secret_message(std::string name,std::string message);
 void on_recv(std::string &packet);
 void push_to_queue_and_signal(SecretMessage &sm);
+void send_secret_request(std::string name);
 #endif /* defined(__p2pchat__tcp__) */

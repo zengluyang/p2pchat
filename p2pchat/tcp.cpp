@@ -69,6 +69,7 @@ void tcp_send(std::string ip,std::string message) {
         return ;
     }
     close(sockfd);
+    printf("TCP SEND: %s\n",message.c_str());
 
 }
 
@@ -97,7 +98,7 @@ void* recv_message_secret(void* thread_id){
         char incoming_data_buffer[4096];
         bytes_recieved = recv(connfd, incoming_data_buffer,4095, 0);
         incoming_data_buffer[bytes_recieved] = '\0';
-        //printf("TCP RECV: %s\n",incoming_data_buffer);
+        printf("TCP RECV: %s\n",incoming_data_buffer);
         std::string packet(incoming_data_buffer);
         on_recv(packet);
         close(connfd);
@@ -120,7 +121,7 @@ void* send_message_secret(void* thread_id){
             std::string name = sm.name;
             std::string message = sm.message;
             pthread_mutex_unlock(&send_secret_message_queue_mutex);
-            //printf("live_user_list[name]:%s\n",live_user_list[name].c_str());
+            printf("live_user_list[%s]:%s\n",name.c_str(),live_user_list[name].c_str());
             tcp_send(live_user_list[name],message);
             //send to network
         }
@@ -142,9 +143,13 @@ void on_secret_message(std::string name,std::string message){
 
 void send_secret_request(std::string name){
     nlohmann::json j;
-    j["type"]="secret_request";
+    j["type"]="request_secret";
     j["dstname"]=name;
     j["srcname"]=username;
+    SecretMessage sm;
+    sm.name=name;
+    sm.message=j.dump();
+    push_to_queue_and_signal(sm);
 }
 
 void send_secret_accept(std::string name) {
@@ -180,9 +185,9 @@ void on_recv(std::string &packet) {
         std::string name = j["name"];
         std::string data = j["data"];
         printf("[M][%s][%s] says to you: %s\n",time_buff,name.c_str(),data.c_str());
-    } else if(type=="request_secret" && j["servername"]==username){
+    } else if(type=="request_secret" && j["dstname"]==username){
         char buff[4096];
-        std::string name = j["clientname"];
+        std::string name = j["srcname"];
         printf("[I][%s][%s] requests to chat with you, y/n:\n",time_buff,name.c_str());
         std::cin.getline(buff,sizeof(buff));
         std::string yesno(buff);

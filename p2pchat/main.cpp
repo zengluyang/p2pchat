@@ -19,6 +19,8 @@
 #include <map>
 #include <string>
 #include <queue>
+#include <vector>
+#include <sstream>
 
 #include "json.h"
 #include "state.h"
@@ -275,9 +277,10 @@ int main(int argc, const char * argv[]) {
         } else if (command[0]!='/') {
             std::string message = command;
             on_broadcast(message);
-        } else if(command.substr(0,2)=="/s") {
-            std::string name_msg = command.substr(2);
-            
+        } else if(command.substr(0,3)=="/s ") {
+            std::string name = command.substr(3);
+            send_secret_request(name);
+
         } else if (command.substr(0,2)=="/t"){
             on_secret_message("zly111", "hello");
         }
